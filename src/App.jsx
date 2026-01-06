@@ -9,47 +9,69 @@ const MENU_ITEMS = [
 
 function App(){
   const [filter, setFilter] = useState("All");
-  const filteredItems = MENU_ITEMS.filter(item => filter === "All" ? true : item.category === filter);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [cart, setCart] = useState([]);
+  const addToCart = (item) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(cartItem => cartItem.id === item.id)
+      if(existingItem){
+        return prevCart.map(cartItem =>
+          cartItem.id == item.id
+            ? {...cartItem, qty: cartItem.qty + 1}
+            : cartItem
+        );
+      }
+      return [...prevCart, {...item, qty: 1}];
+    });
+  };
+  const totalCost = cart.reduce((sum, item) => sum + item.price, 0);
+  const filteredItems = MENU_ITEMS.filter(
+    item => { 
+      const matchesCategory =filter === "All" || item.category === filter;
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }
+  );
   return(
-    <div style={{ padding: '20px', fontFamily: 'Arial'}}>
-      <h1>
-        Cafe Menu
-      </h1>
-      <div style={{ marginBottom: '20px'}}>
-        {["All", "Coffee", "Pastry"].map(cat => (
-          <button
-            key={cat}
-            onClick={() => setFilter(cat)}
-            style={{
-              marginRight: '10px',
-              backgroundColor: filter === cat ? '#6200ee' : '#e0e0e0',
-              color: filter === cat ? 'white' : 'black',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              border: 'none',
-              cursor: 'pointer'
-            }}>
-              {cat}
+    <div style={{ display: 'flex', gap: '40px', padding: '20px' }}>
+      <div style={{ flex: 2 }}>
+        <h1>DIGITAL CAFE</h1>
+        <input  
+          type="text"
+          placeholder="Search for coffee..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ width: '100%', padding: '10px', marginBottom: '20px' }}
+        />
+        <div style={{ display: 'grid', gap: '10px' }}>
+          {filteredItems.map(item => (
+            <div key={item.id} style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '8px'}} >
+              <strong>{item.name}</strong> - ${item.price}
+              <button
+                onClick={() => addToCart(item)}
+                disabled={!item.available}
+                style={{ float: 'right'}}
+              >
+                {item.available ? "Add to Cart" : "Out of Stock"}
               </button>
-        ))}
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={{ display: 'grid', gap: '10px'}}>
-        {filteredItems.map(item => (
-          <div
-            key={item.id}
-            style={{
-              padding: '15px',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              opacity: item.available ? 1 : 0.5
-            }} >
-            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-            <strong>{item.name}</strong>
-            <span>${item.price}</span>
-            </div>
-            {!item.available && <small style={{color: 'red'}}>Sold out</small>}
-            </div>
-        ))}
+      <div style={{ flex: 1, background: '#2e2c2cff', padding: '20px', borderRadius: '8px'}}>
+          <h2>Your Cart ({cart.length})</h2>
+          {cart.length === 0 ? <p>Cart is empty</p> : (
+            <ul>
+              {cart.map((item, index) => (
+                <li key={index}>{item.name} - ${item.price}</li>
+              ))}
+            </ul>
+          )}
+          <hr />
+          <h3>Total: ${totalCost}</h3>
+          <button onClick={() => alert("Order Placed!")} disabled={cart.length === 0}>
+            Checkout
+          </button>
       </div>
     </div>
   );
